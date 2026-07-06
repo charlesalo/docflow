@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ajaia-docs
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:render
+    healthCheckPath: /login
+    envVars:
+      - key: DATABASE_URL
+        value: file:./dev.db
+      - key: NODE_ENV
+        value: production

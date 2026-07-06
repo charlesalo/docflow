@@ -1,0 +1,47 @@
+{
+  "name": "ajaia-docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "start:render": "prisma migrate deploy && tsx prisma/ensure-seed.ts && next start -p ${PORT:-3000}",
+    "lint": "eslint",
+    "test": "vitest run",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "postinstall": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "@tiptap/extension-placeholder": "^3.27.1",
+    "@tiptap/extension-underline": "^3.27.1",
+    "@tiptap/pm": "^3.27.1",
+    "@tiptap/react": "^3.27.1",
+    "@tiptap/starter-kit": "^3.27.1",
+    "isomorphic-dompurify": "^3.18.0",
+    "marked": "^18.0.5",
+    "next": "16.2.10",
+    "prisma": "^6.19.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "tsx": "^4.23.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  }
+}
