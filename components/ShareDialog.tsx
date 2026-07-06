@@ -45,6 +45,12 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
     [shares]
   );
 
+  const isValidUsername = useMemo(() => {
+    const query = username.trim().toLowerCase();
+    if (!query) return false;
+    return candidates.some((c) => c.username.toLowerCase() === query);
+  }, [username, candidates]);
+
   const suggestions = useMemo(() => {
     const query = username.trim().toLowerCase();
     return candidates
@@ -82,7 +88,7 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
 
   async function addShare(e: React.FormEvent) {
     e.preventDefault();
-    if (!username.trim()) return;
+    if (!isValidUsername) return;
     setSubmitting(true);
     setError(null);
     setSuggestionsOpen(false);
@@ -215,8 +221,9 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
           </select>
           <button
             type="submit"
-            disabled={submitting}
-            className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60"
+            disabled={submitting || !isValidUsername}
+            title={!isValidUsername ? "Enter a valid username to add" : undefined}
+            className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Add
           </button>
@@ -260,6 +267,15 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
               ))}
             </ul>
           )}
+        </div>
+
+        <div className="mt-6 flex justify-end border-t border-zinc-100 pt-4">
+          <button
+            onClick={onClose}
+            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          >
+            Done
+          </button>
         </div>
       </div>
     </div>
