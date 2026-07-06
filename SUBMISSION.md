@@ -14,7 +14,7 @@ No signup required — the login screen lists three seeded accounts, click a nam
 
 Use the "Switch user" link in the header to try the same document from a different account's perspective (owner vs. shared-editor).
 
-Note on persistence: this deployment uses SQLite on Render's free tier — a single always-on container with a real writable disk, so documents/shares/edits persist normally across refreshes and repeat visits. The one caveat (documented, not hidden): the disk resets on a redeploy or if Render spins the free instance down after inactivity and restarts it — at that point the app reseeds the three demo accounts automatically (`prisma/ensure-seed.ts` runs on boot and only seeds if the database is empty, so it never wipes data mid-session). See `ARCHITECTURE.md` for why SQLite was kept over a hosted Postgres for this scope.
+Note on persistence: this deployment uses SQLite on Render's free tier — a single always-on container with a real writable disk, so documents/shares/edits persist normally across refreshes, repeat visits, and redeploys — confirmed directly: live data survived multiple git-push-triggered redeploys during development without resetting. The one untested edge case: Render's free tier spins a service down after ~15 minutes of no traffic, and a cold restart from that *could* land on a fresh disk. If that ever happens, `prisma/ensure-seed.ts` reseeds the three demo accounts automatically on boot (only when the database is empty, so it can never wipe data mid-session). See `ARCHITECTURE.md` for why SQLite was kept over a hosted Postgres for this scope.
 
 ## Walkthrough video
 
