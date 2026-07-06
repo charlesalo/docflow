@@ -19,6 +19,7 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
   const [submitting, setSubmitting] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [updatingUsername, setUpdatingUsername] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function load() {
@@ -99,6 +100,31 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
       setError(err instanceof Error ? err.message : "Could not share document");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function updatePermission(targetUsername: string, newPermission: "view" | "edit") {
+    setUpdatingUsername(targetUsername);
+    setError(null);
+    // optimistic update so the select feels instant
+    setShares((prev) =>
+      prev
+        ? prev.map((s) => (s.user.username === targetUsername ? { ...s, permission: newPermission } : s))
+        : prev
+    );
+    try {
+      const res = await fetch(`/api/documents/${documentId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: targetUsername, permission: newPermission }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not update permission");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update permission");
+      await load(); // roll back the optimistic update on failure
+    } finally {
+      setUpdatingUsername(null);
     }
   }
 
@@ -211,9 +237,18 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
                     {share.user.name} <span className="text-zinc-400">@{share.user.username}</span>
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600">
-                      {share.permission === "edit" ? "Can edit" : "View only"}
-                    </span>
+                    <select
+                      value={share.permission}
+                      disabled={updatingUsername === share.user.username}
+                      onChange={(e) =>
+                        updatePermission(share.user.username, e.target.value as "view" | "edit")
+                      }
+                      aria-label={`Permission for ${share.user.name}`}
+                      className="rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600 disabled:opacity-60"
+                    >
+                      <option value="edit">Can edit</option>
+                      <option value="view">View only</option>
+                    </select>
                     <button
                       onClick={() => revoke(share.user.username)}
                       className="text-xs font-medium text-red-600 hover:underline"
