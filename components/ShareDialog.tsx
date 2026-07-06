@@ -207,7 +207,7 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
             <ul className="mt-2 divide-y divide-zinc-100">
               {shares.map((share) => (
                 <li key={share.id} className="flex items-center justify-between py-2 text-sm">
-                  <span>
+                  <span className="text-zinc-900">
                     {share.user.name} <span className="text-zinc-400">@{share.user.username}</span>
                   </span>
                   <div className="flex items-center gap-2">

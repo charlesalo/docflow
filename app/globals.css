@@ -2,6 +2,12 @@
 @plugin "@tailwindcss/typography";
 
 :root {
+  /* This app only ships a light theme. Without this, browsers/OSes with
+     forced/auto "dark mode" (e.g. Chrome's "darken web content") repaint
+     the page with an auto-generated dark palette and wreck contrast on
+     white surfaces like the share dialog. Declaring color-scheme opts
+     out of that heuristic instead of fighting it per-element. */
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #171717;
 }
@@ -11,13 +17,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

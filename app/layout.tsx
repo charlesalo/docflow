@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Ajaia Docs",
   description: "A lightweight collaborative document editor",
+};
+
+// This app only ships a light theme (see globals.css). Declaring it here
+// too tells browsers not to auto-darken the page, which otherwise wrecks
+// contrast on white surfaces like the share dialog.
+export const viewport: Viewport = {
+  colorScheme: "light",
 };
 
 export default function RootLayout({
