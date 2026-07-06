@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type ShareEntry = {
   id: string;
@@ -8,12 +8,18 @@ type ShareEntry = {
   user: { id: string; name: string; username: string };
 };
 
+type Candidate = { id: string; name: string; username: string };
+
 export function ShareDialog({ documentId, onClose }: { documentId: string; onClose: () => void }) {
   const [shares, setShares] = useState<ShareEntry[] | null>(null);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [username, setUsername] = useState("");
   const [permission, setPermission] = useState<"view" | "edit">("edit");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     const res = await fetch(`/api/documents/${documentId}`);
@@ -21,16 +27,64 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
     if (res.ok) setShares(data.document.shares);
   }
 
+  async function loadCandidates() {
+    const res = await fetch("/api/users");
+    const data = await res.json();
+    if (res.ok) setCandidates(data.users);
+  }
+
   useEffect(() => {
     load();
+    loadCandidates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId]);
+
+  const alreadySharedUsernames = useMemo(
+    () => new Set((shares ?? []).map((s) => s.user.username)),
+    [shares]
+  );
+
+  const suggestions = useMemo(() => {
+    const query = username.trim().toLowerCase();
+    return candidates
+      .filter((c) => !alreadySharedUsernames.has(c.username))
+      .filter(
+        (c) =>
+          query.length === 0 ||
+          c.username.toLowerCase().includes(query) ||
+          c.name.toLowerCase().includes(query)
+      )
+      .slice(0, 6);
+  }, [candidates, username, alreadySharedUsernames]);
+
+  function selectSuggestion(candidate: Candidate) {
+    setUsername(candidate.username);
+    setSuggestionsOpen(false);
+    inputRef.current?.focus();
+  }
+
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!suggestionsOpen || suggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((i) => (i + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((i) => (i - 1 + suggestions.length) % suggestions.length);
+    } else if (e.key === "Enter" && activeIndex < suggestions.length) {
+      e.preventDefault();
+      selectSuggestion(suggestions[activeIndex]);
+    } else if (e.key === "Escape") {
+      setSuggestionsOpen(false);
+    }
+  }
 
   async function addShare(e: React.FormEvent) {
     e.preventDefault();
     if (!username.trim()) return;
     setSubmitting(true);
     setError(null);
+    setSuggestionsOpen(false);
     try {
       const res = await fetch(`/api/documents/${documentId}/share`, {
         method: "POST",
@@ -80,12 +134,51 @@ export function ShareDialog({ documentId, onClose }: { documentId: string; onClo
         </div>
 
         <form onSubmit={addShare} className="mt-4 flex gap-2">
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="username (e.g. bob)"
-            className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm"
-          />
+          <div className="relative min-w-0 flex-1">
+            <input
+              ref={inputRef}
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setActiveIndex(0);
+                setSuggestionsOpen(true);
+              }}
+              onFocus={() => setSuggestionsOpen(true)}
+              onBlur={() => {
+                // delay so a suggestion click's onMouseDown can fire first
+                setTimeout(() => setSuggestionsOpen(false), 100);
+              }}
+              onKeyDown={handleInputKeyDown}
+              placeholder="username (e.g. bob)"
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={suggestionsOpen && suggestions.length > 0}
+              aria-autocomplete="list"
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm"
+            />
+            {suggestionsOpen && suggestions.length > 0 ? (
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-md border border-zinc-200 bg-white shadow-lg">
+                {suggestions.map((candidate, index) => (
+                  <li key={candidate.id}>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        selectSuggestion(candidate);
+                      }}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${
+                        index === activeIndex ? "bg-zinc-100" : "bg-white"
+                      }`}
+                    >
+                      <span className="font-medium text-zinc-900">{candidate.name}</span>
+                      <span className="text-xs text-zinc-500">@{candidate.username}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
           <select
             value={permission}
             onChange={(e) => setPermission(e.target.value as "view" | "edit")}
