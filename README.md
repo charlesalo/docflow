@@ -68,4 +68,4 @@ See `ARCHITECTURE.md` for the reasoning behind these cuts and what would be buil
 
 ## Deployment
 
-See `SUBMISSION.md` for the live deployment URL and any reviewer credentials/instructions.
+Live at **https://ajaia-docs-6z8d.onrender.com** (Render free web service, deployed from `render.yaml`). No reviewer signup needed — sign in as any seeded account from the login screen. See `SUBMISSION.md` for full reviewer notes and `ARCHITECTURE.md` for the persistence tradeoff on this hosting tier.
