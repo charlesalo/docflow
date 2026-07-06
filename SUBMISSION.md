@@ -30,10 +30,12 @@ See `walkthrough-video-url.txt` for the link.
 - `SUBMISSION.md` — this file
 - `walkthrough-video-url.txt` — the recorded walkthrough link
 - `render.yaml` — deployment blueprint (Render free web service)
-- Automated tests: `lib/access.test.ts` (owner/edit/view/none permission resolution), `lib/import.test.ts` (file-import parsing and XSS-sanitization) — run via `npm test` (12/12 passing)
+- Automated tests: `lib/access.test.ts` (owner/edit/view/none permission resolution), `lib/import.test.ts` (file-import parsing and XSS-sanitization), `lib/versions.test.ts` (version-checkpoint throttle rule) — run via `npm test` (15/15 passing)
 
 ## Feature status
 
-All five required capability areas are implemented and were verified against the live deployment (not just locally): document creation/rename/edit/reopen with rich-text formatting, `.txt`/`.md` file import, owner/edit/view sharing, and persistence across refresh. See `README.md` → "What's intentionally out of scope" for the deliberate cuts (real-time collaboration, `.docx` import, comments/version history/PDF export — all named as optional stretch in the brief).
+All five required capability areas are implemented and were verified against the live deployment (not just locally): document creation/rename/edit/reopen with rich-text formatting, `.txt`/`.md` file import, owner/edit/view sharing, and persistence across refresh. See `README.md` → "What's intentionally out of scope" for the deliberate cuts (real-time collaboration, `.docx` import, comments/PDF export — all named as optional stretch in the brief).
 
-If given another 2-4 hours, next priorities are listed at the end of `ARCHITECTURE.md`: real auth, document revision history, and `.docx` import.
+**Stretch feature:** document version history — automatic throttled checkpoints plus a manual "Save version now," with a History panel to preview and restore any checkpoint. See `README.md` → "Version history" and `ARCHITECTURE.md` for why this was the one stretch item picked and a design bug caught during testing (an earlier version snapshotted pre-edit instead of post-edit, which made restores return stale content — fixed and re-verified end-to-end before shipping).
+
+If given another 2-4 hours, next priorities are listed at the end of `ARCHITECTURE.md`: real auth, named/labeled versions on top of the checkpoint trail, and `.docx` import.

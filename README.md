@@ -2,7 +2,7 @@
 
 > Built as a take-home assessment for Ajaia's AI-Native Full Stack Developer role. See `Assessment_Brief.md` for the original prompt, `ARCHITECTURE.md` for design tradeoffs, and `AI_WORKFLOW.md` for how AI tools were used.
 
-A lightweight, Google-Docs-style collaborative document editor: create and rename documents, edit with rich-text formatting, import `.txt`/`.md` files as new documents, share documents with other users, and persist everything across refreshes.
+A lightweight, Google-Docs-style collaborative document editor: create and rename documents, edit with rich-text formatting, import `.txt`/`.md` files as new documents, share documents with other users, persist everything across refreshes, and browse/restore version history.
 
 ## Stack
 
@@ -43,7 +43,7 @@ Use the "Switch user" link in the header to sign in as a different seeded accoun
 npm test
 ```
 
-Covers file-import parsing/sanitization (`lib/import.test.ts`) and document access-control logic — owner / edit-share / view-share / no-access (`lib/access.test.ts`).
+Covers file-import parsing/sanitization (`lib/import.test.ts`), document access-control logic — owner / edit-share / view-share / no-access (`lib/access.test.ts`) — and the version-snapshot throttle rule (`lib/versions.test.ts`).
 
 ## Feature scope
 
@@ -55,6 +55,8 @@ Covers file-import parsing/sanitization (`lib/import.test.ts`) and document acce
 
 **Persistence** — Prisma + SQLite; documents and shares survive a refresh and a server restart in local dev.
 
+**Version history** (stretch) — every document keeps a checkpoint trail. A checkpoint is saved automatically after an edit, throttled to one per 3-minute window so continuous autosave doesn't create a version per keystroke pause — you can also click "Save version now" to force one immediately. The "History" button (next to Share) opens a panel to browse checkpoints, preview any of them read-only, and restore one; restoring itself snapshots the pre-restore state first, so a restore is never a dead end. Viewers can browse history; only the owner or an edit-collaborator can save/restore.
+
 **Auth model** — this is a scoped-down simulation, not real auth: no passwords, no signup, just a fixed list of seeded users and a cookie holding the chosen user id. This is intentional per the assessment's brief ("You may simulate users with seeded accounts... if that keeps the scope reasonable") — a real deployment would replace `lib/auth.ts` with actual session/password (or OAuth) handling without touching the rest of the app, since every route already funnels through `getCurrentUser()`.
 
 ## What's intentionally out of scope
@@ -62,7 +64,7 @@ Covers file-import parsing/sanitization (`lib/import.test.ts`) and document acce
 - Real-time collaborative editing (multiple cursors/live sync) — single-editor-at-a-time autosave only.
 - Enterprise-grade access control (roles beyond owner/edit/view, org-level permissions).
 - File types beyond `.txt`/`.md` (no `.docx`/PDF import).
-- Comment/suggestion mode, version history, PDF export.
+- Comment/suggestion mode, PDF export, real-time presence indicators.
 
 See `ARCHITECTURE.md` for the reasoning behind these cuts and what would be built next with more time.
 

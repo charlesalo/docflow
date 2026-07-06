@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { getDocumentAccess } from "@/lib/access";
 import { updateDocumentSchema } from "@/lib/validation";
+import { maybeAutoSnapshot } from "@/lib/versionSnapshot";
 import DOMPurify from "isomorphic-dompurify";
 
 type Params = { params: Promise<{ id: string }> };
@@ -46,6 +47,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       ...(parsed.data.content !== undefined ? { content: DOMPurify.sanitize(parsed.data.content) } : {}),
     },
   });
+
+  // Snapshot *after* applying the edit, so a checkpoint always reflects
+  // real authored content rather than whatever was there a moment before.
+  await maybeAutoSnapshot(id);
 
   return NextResponse.json({ document: updated });
 }

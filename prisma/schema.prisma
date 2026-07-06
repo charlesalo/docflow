@@ -32,7 +32,19 @@ model Document {
   ownerId String
   owner   User   @relation("OwnedDocuments", fields: [ownerId], references: [id])
 
-  shares Share[]
+  shares   Share[]
+  versions DocumentVersion[]
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  title      String
+  content    String
+  createdAt  DateTime @default(now())
+
+  @@index([documentId, createdAt])
 }
 
 model Share {

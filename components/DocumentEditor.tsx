@@ -7,6 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
 import { ShareDialog } from "@/components/ShareDialog";
+import { VersionHistoryDialog } from "@/components/VersionHistoryDialog";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -28,6 +29,7 @@ export function DocumentEditor({
   const [title, setTitle] = useState(initialTitle);
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [shareOpen, setShareOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const savePatch = useCallback(
@@ -95,6 +97,12 @@ export function DocumentEditor({
         </Link>
         <div className="flex items-center gap-3 text-xs text-zinc-500">
           <SaveIndicator state={saveState} />
+          <button
+            onClick={() => setHistoryOpen(true)}
+            className="rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            History
+          </button>
           {isOwner ? (
             <button
               onClick={() => setShareOpen(true)}
@@ -125,6 +133,18 @@ export function DocumentEditor({
       </div>
 
       {shareOpen ? <ShareDialog documentId={documentId} onClose={() => setShareOpen(false)} /> : null}
+      {historyOpen ? (
+        <VersionHistoryDialog
+          documentId={documentId}
+          canRestore={canEdit}
+          onClose={() => setHistoryOpen(false)}
+          onRestored={(restored) => {
+            setTitle(restored.title);
+            editor?.commands.setContent(restored.content);
+            setSaveState("saved");
+          }}
+        />
+      ) : null}
     </div>
   );
 }

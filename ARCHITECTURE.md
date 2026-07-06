@@ -10,6 +10,7 @@ This was built against a hard ~4 hour timebox (see `CLAUDE.md`), not the brief's
 2. **A real editor, not a textarea.** Tiptap gives bold/italic/underline/headings/lists with an actual toolbar and undo/redo, which is what "should feel usable and coherent" in the brief means in practice — a `<textarea>` with markdown syntax would have been faster to build but would fail that bar.
 3. **File import that's actually safe.** Uploaded `.md`/`.txt` content is parsed (via `marked`) and then run through DOMPurify before it ever reaches the database or the editor — an uploaded file is untrusted input, and it's the one place in the app where arbitrary user-supplied HTML/script content could otherwise land.
 4. **Debounced autosave over an explicit save button.** Matches how Google Docs actually feels, and it's a small implementation cost (a 600ms `setTimeout` debounce) for a meaningfully better UX.
+5. **Version history as the one stretch feature (from the brief's optional list).** Picked over real-time presence/commenting/PDF export because it reuses the access-control model directly (no new permission surface to get wrong) and is the most natively "Google-Docs" feature of the stretch options. Snapshots are taken *after* an edit applies (not before) so a checkpoint always reflects real authored content — an earlier version of this snapshotted pre-edit and produced confusing restores (see git history); caught by testing the restore flow end-to-end with curl rather than trusting the design on paper.
 
 ## What I deprioritized, and why
 
@@ -17,7 +18,7 @@ This was built against a hard ~4 hour timebox (see `CLAUDE.md`), not the brief's
 - **Real-time collaboration.** Explicitly listed as optional stretch. Out of scope here; autosave-on-edit was the right-sized substitute.
 - **`.docx` import.** Parsing `.docx` (a zipped XML format) reliably is a meaningfully bigger dependency/edge-case surface than plain text or Markdown. `.txt`/`.md` cover the "turn a file into an editable document" requirement without that risk, and the limitation is stated clearly in both the UI (upload button label) and the README.
 - **Granular roles beyond owner/edit/view.** A `permission: "view" | "edit"` field on the `Share` model demonstrates the *pattern* of access differentiation the brief asks for, without building out an RBAC system nobody asked for.
-- **Document history, comment threads, PDF export.** All named as optional stretch goals in the brief; none were started so that the required five capability areas would all be solid rather than partially covering extras.
+- **Comment threads, PDF export, real-time presence.** All named as optional stretch goals in the brief; version history was the one picked (see above) so the required five capability areas stayed solid rather than spreading effort across several partial extras.
 
 ## Data model
 
@@ -25,6 +26,7 @@ This was built against a hard ~4 hour timebox (see `CLAUDE.md`), not the brief's
 User (id, username, name)
 Document (id, title, content [sanitized HTML], ownerId → User)
 Share (documentId → Document, userId → User, permission: "view" | "edit")
+DocumentVersion (documentId → Document, title, content [sanitized HTML snapshot], createdAt)
 ```
 
 `content` is stored as sanitized HTML (Tiptap's native serialization format), not a custom JSON schema — this keeps read/write trivial and means the stored value can be rendered directly without a client-side library if ever needed.
@@ -36,6 +38,6 @@ SQLite via Prisma is used for persistence, per the brief's explicit allowance ("
 ## What I'd build next with another 2-4 hours
 
 - Swap the mocked cookie auth for real sessions (magic-link or a proper password flow) without changing any document/sharing code.
-- Add per-document revision history (append-only snapshot table) — the sharing/access model already gates who could view it.
+- Named/labeled versions (a lightweight "name this version" like Google Docs) on top of the automatic checkpoint trail already built.
 - Real-time presence (who else has this doc open) via a WebSocket or polling layer, ahead of full collaborative editing.
 - `.docx` import via `mammoth`, behind the same `fileTextToDocumentHtml`-style sanitization path already in place for `.md`/`.txt`.
